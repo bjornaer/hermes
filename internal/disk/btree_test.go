@@ -50,7 +50,7 @@ func TestBtreeGet(t *testing.T) {
 
 	for i := 1; i <= totalElements; i++ {
 		key := fmt.Sprintf("key-%d", i)
-		value, found, err := tree.Get(key)
+		value, _, found, err := tree.Get(key)
 		if err != nil {
 			t.Error(err)
 		}
@@ -61,7 +61,7 @@ func TestBtreeGet(t *testing.T) {
 
 	for i := totalElements + 1; i <= totalElements+1+1000; i++ {
 		key := fmt.Sprintf("key-%d", i)
-		_, found, err := tree.Get(key)
+		_, _, found, err := tree.Get(key)
 		if err != nil {
 			t.Error(err)
 		}

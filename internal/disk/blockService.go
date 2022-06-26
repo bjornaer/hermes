@@ -7,7 +7,6 @@ import (
 
 const blockSize = 4096
 
-// Based on the below calc
 const maxLeafSize = 30
 
 func uint64ToBytes(index uint64) []byte {
@@ -21,7 +20,8 @@ func uint64FromBytes(b []byte) uint64 {
 }
 
 type BlockService struct {
-	file *os.File
+	file      *os.File
+	BlockSize int // TODO be sure this can correspond to actual block size
 }
 
 func (bs *BlockService) GetLatestBlockID() (int64, error) {
@@ -219,7 +219,8 @@ func (bs *BlockService) updateRootNode(n *DiskNode) error {
 }
 
 func NewBlockService(file *os.File) *BlockService {
-	return &BlockService{file}
+	vbs := os.Getpagesize()
+	return &BlockService{file: file, BlockSize: vbs}
 }
 
 func (bs *BlockService) rootBlockExists() bool {
@@ -242,5 +243,6 @@ func (bs *BlockService) rootBlockExists() bool {
 2. Then based on the blocksize, calculate the maxLeafSize
 */
 func (bs *BlockService) GetMaxLeafSize() int {
+	// s := bs.VirtualBlockSize
 	return maxLeafSize
 }

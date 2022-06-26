@@ -15,7 +15,7 @@ type Pairs struct {
 	KeyLen    uint16    // 2
 	ValueLen  uint16    // 2
 	Key       string    // 30
-	Value     string    // 93 // serialize this so we can allow generics
+	Value     string    // 93 // serialize this on the client side, to enable more complex data
 	Timestamp time.Time // 8
 	TimeLen   uint16    // 2
 }
@@ -30,8 +30,8 @@ func (p *Pairs) SetValue(value string) {
 	p.ValueLen = uint16(len(value))
 }
 
-func (p *Pairs) SetTime() {
-	p.Timestamp = time.Now()
+func (p *Pairs) SetTime(t time.Time) {
+	p.Timestamp = t
 	p.TimeLen = 8
 }
 
@@ -49,7 +49,15 @@ func NewPair(key string, value string) *Pairs {
 	pair := new(Pairs)
 	pair.SetKey(key)
 	pair.SetValue(value)
-	pair.SetTime()
+	pair.SetTime(time.Now())
+	return pair
+}
+
+func NewPairWithTime(key string, value string, t time.Time) *Pairs {
+	pair := new(Pairs)
+	pair.SetKey(key)
+	pair.SetValue(value)
+	pair.SetTime(t)
 	return pair
 }
 

@@ -1,36 +1,44 @@
 package disk
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bjornaer/hermes/internal/crdt"
 )
 
 //DB - Handle exported by the package
-type DiskStorage struct {
+type DiskStorage[T any] struct {
 	storage *Btree
 }
 
-//Open - Opens a new db connection at the file path
-func Open(filePath string) (*DiskStorage, error) {
-	storage, err := InitializeBtree(filePath)
-	if err != nil {
-		return nil, err
-	}
-	return &DiskStorage{storage}, nil
-}
-
-//Get - Get the stored value from the database for the respective key
-func (ds *DiskStorage) Get(key string) (string, bool) {
+//Get - Get the stored value from the database for the respective key // FIXME this any casting bs is to avoid handling generics inside BTREE code
+func (ds *DiskStorage[T]) Get(key string) (T, bool) {
 	v, _, found, err := ds.storage.Get(key)
 	if err != nil {
-		return "", false
+		return any(v).(T), false
 	}
-	return v, found
+	return any(v).(T), found
 }
 
-func (ds *DiskStorage) Add(key string, value string) error {
-	pair := NewPair(key, value)
+func (ds *DiskStorage[T]) Add(key string, value T) error {
+	v, ok := any(value).(string)
+	if !ok {
+		return fmt.Errorf("We just store strings for now, sorry.")
+	}
+	pair := NewPair(key, v)
+	if err := pair.Validate(); err != nil {
+		return err
+	}
+	return ds.storage.Insert(pair)
+}
+
+func (ds *DiskStorage[T]) AddWithTime(key string, value T, t time.Time) error {
+	v, ok := any(value).(string)
+	if !ok {
+		return fmt.Errorf("We just store strings for now, sorry.")
+	}
+	pair := NewPairWithTime(key, v, t)
 	if err := pair.Validate(); err != nil {
 		return err
 	}
@@ -41,7 +49,7 @@ func (ds *DiskStorage) Add(key string, value string) error {
 //
 // The second return value (bool) indicates whether the element exists or not
 // If the given element does not exist, the second return (bool) is false
-func (ds *DiskStorage) AddedAt(key string) (time.Time, bool) {
+func (ds *DiskStorage[T]) AddedAt(key string) (time.Time, bool) {
 	_, t, found, err := ds.storage.Get(key)
 	if err != nil {
 		return time.Time{}, false
@@ -51,8 +59,17 @@ func (ds *DiskStorage) AddedAt(key string) (time.Time, bool) {
 
 // Each traverses the items in the Set, calling the provided function
 // for each element key/value/timestamp association
-func (ds *DiskStorage) Each(f func(key string, val string, addedAt time.Time) error) error {
-	for key, element := range ds.storage { // this gonna be a fuckaroo to make happen
+func (ds *DiskStorage[T]) Each(f func(key string, val T, addedAt time.Time) error) error {
+	// go into the btree code and try to adapt this code idea:
+	// mm := MyNewType()
+	// for mm.Next() {
+	// 	v := mm.Get()
+	// 	...
+	// }
+	// if err := mm.Error(); err != nil {
+	// 	...
+	// }
+	for key, element := range ds.storage {
 		err := f(key, element.Value, element.Timestamp)
 		if err != nil {
 			return err
@@ -61,7 +78,7 @@ func (ds *DiskStorage) Each(f func(key string, val string, addedAt time.Time) er
 	return nil
 }
 
-func (ds *DiskStorage) Size() int {
+func (ds *DiskStorage[T]) Size() int {
 	return ds.storage.Size()
 }
 
@@ -71,5 +88,5 @@ func NewDiskStorage[T any](filePath string) (crdt.CrdtEngine[T], error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DiskStorage{storage}, nil
+	return &DiskStorage[T]{storage}, nil
 }
