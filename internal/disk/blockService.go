@@ -3,6 +3,7 @@ package disk
 import (
 	"encoding/binary"
 	"os"
+	"sync"
 )
 
 const blockSize = 4096
@@ -22,6 +23,7 @@ func uint64FromBytes(b []byte) uint64 {
 type BlockService struct {
 	file      *os.File
 	BlockSize int // TODO be sure this can correspond to actual block size
+	mu        *sync.Mutex
 }
 
 func (bs *BlockService) GetLatestBlockID() (int64, error) {
@@ -144,6 +146,8 @@ func (bs *BlockService) newBlock() (*DiskBlock, error) {
 }
 
 func (bs *BlockService) WriteBlockToDisk(block *DiskBlock) error {
+	bs.mu.Lock()
+	defer bs.mu.Unlock()
 	seekOffset := blockSize * block.Id
 	blockBuffer := bs.GetBufferFromBlock(block)
 	_, err := bs.file.Seek(int64(seekOffset), 0)
@@ -220,7 +224,7 @@ func (bs *BlockService) updateRootNode(n *DiskNode) error {
 
 func NewBlockService(file *os.File) *BlockService {
 	vbs := os.Getpagesize()
-	return &BlockService{file: file, BlockSize: vbs}
+	return &BlockService{file: file, BlockSize: vbs, mu: &sync.Mutex{}}
 }
 
 func (bs *BlockService) rootBlockExists() bool {
