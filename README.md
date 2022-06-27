@@ -1,6 +1,6 @@
 # hermes
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/bjornaer/hermes)](https://goreportcard.com/report/github.com/bjornaer/hermes) ![tests](https://github.com/bjornaer/hermes/actions/workflows/push.yaml/badge.svg) ![GitHub last commit](https://img.shields.io/github/last-commit/bjornaer/hermes?style=plastic) ![GitHub repo size](https://img.shields.io/github/repo-size/bjornaer/hermes?style=plastic) ![Lines of code](https://img.shields.io/tokei/lines/github/bjornaer/hermes?style=plastic) ![GitHub](https://img.shields.io/github/license/bjornaer/hermes?style=flat-square) [![HitCount](https://hits.dwyl.com/bjornaer/crdt.svg?style=flat-square)](http://hits.dwyl.com/bjornaer/hermes)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bjornaer/hermes)](https://goreportcard.com/report/github.com/bjornaer/hermes) ![tests](https://github.com/bjornaer/hermes/actions/workflows/push.yaml/badge.svg) ![GitHub last commit](https://img.shields.io/github/last-commit/bjornaer/hermes?style=plastic) ![GitHub repo size](https://img.shields.io/github/repo-size/bjornaer/hermes?style=plastic) ![Lines of code](https://img.shields.io/tokei/lines/github/bjornaer/hermes?style=plastic) ![GitHub](https://img.shields.io/github/license/bjornaer/hermes?style=flat-square) [![HitCount](https://hits.dwyl.com/bjornaer/hermes.svg?style=flat-square)](http://hits.dwyl.com/bjornaer/hermes)
 
 **Hermes** is a distributed key-value store which guarantees data consistency through CRDT's
 
