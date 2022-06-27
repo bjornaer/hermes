@@ -67,12 +67,14 @@ func (ds *DiskStorage[T]) Each(f func(key string, val T, addedAt time.Time) erro
 	// if err := mm.Error(); err != nil {
 	// 	...
 	// }
-	for key, element := range ds.storage {
-		err := f(key, element.Value, element.Timestamp)
-		if err != nil {
-			return err
-		}
-	}
+	// for key, element := range ds.storage {
+	// 	err := f(key, element.Value, element.Timestamp)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	var generic T
+	f("", generic, time.Time{})
 	return nil
 }
 
