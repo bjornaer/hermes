@@ -55,26 +55,21 @@ func (ds *DiskStorage[T]) AddedAt(key string) (time.Time, bool) {
 	return t, found
 }
 
-// Each traverses the items in the Set, calling the provided function
+// Each traverses the items in the Tree, calling the provided function
 // for each element key/value/timestamp association
 func (ds *DiskStorage[T]) Each(f func(key string, val T, addedAt time.Time) error) error {
-	// go into the btree code and try to adapt this code idea:
-	// mm := MyNewType()
-	// for mm.Next() {
-	// 	v := mm.Get()
-	// 	...
-	// }
-	// if err := mm.Error(); err != nil {
-	// 	...
-	// }
-	// for key, element := range ds.storage {
-	// 	err := f(key, element.Value, element.Timestamp)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-	var generic T
-	f("", generic, time.Time{})
+	s := ds.storage
+	for s.Next() {
+		for _, elm := range s.IterGet() {
+			err := f(elm.Key, any(elm.Value).(T), elm.Timestamp)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if err := s.Error(); err != nil {
+		return err
+	}
 	return nil
 }
 
