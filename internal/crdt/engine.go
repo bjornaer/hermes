@@ -81,7 +81,7 @@ func (s *TimeMap[T]) Get(key string) (T, bool) {
 }
 
 // newTimeSet returns an empty map-backed implementation of the CrdtEngine interface
-func NewTimeSet[T comparable]() CrdtEngine[T] {
+func NewTimeSet[T comparable]() *TimeMap[T] {
 	return &TimeMap[T]{
 		Storage: make(map[string]Element[T]),
 	}

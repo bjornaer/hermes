@@ -3,8 +3,6 @@ package disk
 import (
 	"fmt"
 	"time"
-
-	"github.com/bjornaer/hermes/internal/crdt"
 )
 
 //DB - Handle exported by the package
@@ -83,7 +81,7 @@ func (ds *DiskStorage[T]) Size() int {
 }
 
 // NewDiskStorage returns an empty memory DB storage implementation of the CrdtEngine interface
-func NewDiskStorage[T any](filePath string) (crdt.CrdtEngine[T], error) {
+func NewDiskStorage[T any](filePath string) (*DiskStorage[T], error) {
 	storage, err := InitializeBtree(filePath)
 	if err != nil {
 		return nil, err
