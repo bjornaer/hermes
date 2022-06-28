@@ -1,13 +1,14 @@
-package disk_test
+package diskblock_test
 
 import (
 	"os"
 	"testing"
 
-	"github.com/bjornaer/hermes/internal/disk"
+	"github.com/bjornaer/hermes/internal/disk/diskblock"
+	"github.com/bjornaer/hermes/internal/disk/pair"
 )
 
-func initBlockService() *disk.BlockService {
+func initBlockService() *diskblock.BlockService {
 	path := "./db/test.db"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Mkdir("./db", os.ModePerm)
@@ -23,7 +24,7 @@ func initBlockService() *disk.BlockService {
 	if err != nil {
 		panic(err)
 	}
-	return disk.NewBlockService(file)
+	return diskblock.NewBlockService(file)
 }
 
 func TestShouldGetNegativeIfBlockNotPresent(t *testing.T) {
@@ -62,10 +63,10 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 	if block.CurrentLeafSize != 0 {
 		t.Error("Block leaf size should be zero")
 	}
-	elements := make([]*disk.Pairs, 3)
-	elements[0] = disk.NewPair("hola", "amigos")
-	elements[1] = disk.NewPair("foo", "bar")
-	elements[2] = disk.NewPair("gooz", "bumps")
+	elements := make([]*pair.Pairs, 3)
+	elements[0] = pair.NewPair("hola", "amigos")
+	elements[1] = pair.NewPair("foo", "bar")
+	elements[2] = pair.NewPair("gooz", "bumps")
 	block.SetData(elements)
 	err = blockService.WriteBlockToDisk(block)
 	if err != nil {
@@ -83,30 +84,30 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 }
 
 func TestShouldConvertPairToAndFromBytes(t *testing.T) {
-	pair := &disk.Pairs{}
-	pair.SetKey("Hola  ")
-	pair.SetValue("Amigos")
-	pairBytes := disk.ConvertPairsToBytes(pair)
-	convertedPair := disk.ConvertBytesToPair(pairBytes)
+	p := pair.NewPair("Hola  ", "Amigos")
+	// p.SetKey("Hola  ")
+	// p.SetValue("Amigos")
+	pairBytes := pair.ConvertPairsToBytes(p)
+	convertedPair := pair.ConvertBytesToPair(pairBytes)
 
-	if pair.KeyLen != convertedPair.KeyLen || pair.ValueLen != convertedPair.ValueLen {
+	if p.KeyLen != convertedPair.KeyLen || p.ValueLen != convertedPair.ValueLen {
 		t.Error("Lengths do not match")
 	}
 
-	if pair.Key != convertedPair.Key || pair.Value != convertedPair.Value {
+	if p.Key != convertedPair.Key || p.Value != convertedPair.Value {
 		t.Error("Values do not match")
 	}
 }
 
 func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 	blockService := initBlockService()
-	block := &disk.DiskBlock{}
+	block := &diskblock.DiskBlock{}
 	block.SetChildren([]uint64{2, 3, 4, 6})
 
-	elements := make([]*disk.Pairs, 3)
-	elements[0] = disk.NewPair("hola", "amigos")
-	elements[1] = disk.NewPair("foo", "bar")
-	elements[2] = disk.NewPair("gooz", "bumps")
+	elements := make([]*pair.Pairs, 3)
+	elements[0] = pair.NewPair("hola", "amigos")
+	elements[1] = pair.NewPair("foo", "bar")
+	elements[2] = pair.NewPair("gooz", "bumps")
 	block.SetData(elements)
 	blockBuffer := blockService.GetBufferFromBlock(block)
 	convertedBlock := blockService.GetBlockFromBuffer(blockBuffer)
@@ -130,10 +131,10 @@ func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 
 func TestShouldConvertToAndFromDiskNode(t *testing.T) {
 	bs := initBlockService()
-	node := &disk.DiskNode{}
+	node := &diskblock.DiskNode{}
 	node.BlockID = 55
-	elements := make([]*disk.Pairs, 3)
-	elements[0] = disk.NewPair("hola", "amigos")
+	elements := make([]*pair.Pairs, 3)
+	elements[0] = pair.NewPair("hola", "amigos")
 	node.Keys = elements
 	node.ChildrenBlockIDs = []uint64{1000, 10001}
 	block := bs.ConvertDiskNodeToBlock(node)

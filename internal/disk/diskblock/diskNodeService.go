@@ -1,6 +1,8 @@
-package disk
+package diskblock
 
-import "os"
+import (
+	"os"
+)
 
 type diskNodeService struct {
 	file *os.File
@@ -9,7 +11,7 @@ type diskNodeService struct {
 func NewDiskNodeService(file *os.File) *diskNodeService {
 	return &diskNodeService{file: file}
 }
-func (dns *diskNodeService) getRootNodeFromDisk() (*DiskNode, error) {
+func (dns *diskNodeService) GetRootNodeFromDisk() (*DiskNode, error) {
 	bs := NewBlockService(dns.file)
 	rootBlock, err := bs.GetRootBlock()
 	if err != nil {

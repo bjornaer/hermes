@@ -1,15 +1,19 @@
-package disk_test
+package btree_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/bjornaer/hermes/internal/disk"
+	"github.com/bjornaer/hermes/internal/disk/btree"
+	"github.com/bjornaer/hermes/internal/disk/pair"
 )
 
 func clearDB() string {
 	path := "./db/test.db"
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.Mkdir("./db", os.ModePerm)
+	}
 	if _, err := os.Stat(path); err == nil {
 		// path/to/whatever exists
 		err := os.Remove(path)
@@ -21,7 +25,7 @@ func clearDB() string {
 }
 
 func TestBtreeInsert(t *testing.T) {
-	tree, err := disk.InitializeBtree(clearDB())
+	tree, err := btree.InitializeBtree(clearDB())
 	if err != nil {
 		t.Error(err)
 	}
@@ -31,13 +35,13 @@ func TestBtreeInsert(t *testing.T) {
 		if i == 230 {
 			println("Inserted 229 elements")
 		}
-		tree.Insert(disk.NewPair(key, value))
+		tree.Insert(pair.NewPair(key, value))
 	}
 	// tree.root.PrintTree()
 }
 
 func TestBtreeGet(t *testing.T) {
-	tree, err := disk.InitializeBtree(clearDB())
+	tree, err := btree.InitializeBtree(clearDB())
 	if err != nil {
 		t.Error(err)
 	}
@@ -45,7 +49,7 @@ func TestBtreeGet(t *testing.T) {
 	for i := 1; i <= totalElements; i++ {
 		key := fmt.Sprintf("key-%d", i)
 		value := fmt.Sprintf("value-%d", i)
-		tree.Insert(disk.NewPair(key, value))
+		tree.Insert(pair.NewPair(key, value))
 	}
 
 	for i := 1; i <= totalElements; i++ {
