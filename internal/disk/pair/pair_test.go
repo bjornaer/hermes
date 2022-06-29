@@ -1,9 +1,9 @@
-package disk_test
+package pair_test
 
 import (
 	"testing"
 
-	"github.com/bjornaer/hermes/internal/disk"
+	"github.com/bjornaer/hermes/internal/disk/pair"
 )
 
 func TestValidate(t *testing.T) {
@@ -12,15 +12,15 @@ func TestValidate(t *testing.T) {
 		"f3rasnjjnasdnjadsjndsanjsdanjdsanjdsjasndsjdjnsdajnsdajnsjndsajn" +
 		"jasnadsaasdkhadhyy727t22effawfawhhdahsahgasdhgdsahgsadhgsadhghdghads" +
 		"asdjajsddsjajsdajsadjndsjn"
-	pair := disk.NewPair(key1, value)
+	p := pair.NewPair(key1, value)
 
-	if pair.Validate() == nil {
+	if p.Validate() == nil {
 		t.Errorf("Should throw error")
 	}
-	if disk.NewPair(key1, "ss").Validate() == nil {
+	if pair.NewPair(key1, "ss").Validate() == nil {
 		t.Errorf("Shoudl throw error as key is longer than 30")
 	}
-	if disk.NewPair("smallKEY", value).Validate() == nil {
+	if pair.NewPair("smallKEY", value).Validate() == nil {
 		t.Errorf("Shoudl throw error as value is longer than 90")
 	}
 }

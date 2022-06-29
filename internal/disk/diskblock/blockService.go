@@ -1,14 +1,16 @@
-package disk
+package diskblock
 
 import (
 	"encoding/binary"
 	"os"
 	"sync"
+
+	"github.com/bjornaer/hermes/internal/disk/pair"
 )
 
 const blockSize = 4096
 
-const maxLeafSize = 30
+const maxLeafSize = (blockSize / pair.PairSize) - 3
 
 func uint64ToBytes(index uint64) []byte {
 	b := make([]byte, 8)
@@ -88,10 +90,10 @@ func (bs *BlockService) GetBlockFromBuffer(blockBuffer []byte) *DiskBlock {
 	block.currentChildrenSize = uint64FromBytes(blockBuffer[blockOffset:])
 	blockOffset += 8
 	//Read actual pairs now
-	block.DataSet = make([]*Pairs, block.CurrentLeafSize)
+	block.DataSet = make([]*pair.Pairs, block.CurrentLeafSize)
 	for i := 0; i < int(block.CurrentLeafSize); i++ {
-		block.DataSet[i] = ConvertBytesToPair(blockBuffer[blockOffset:])
-		blockOffset += pairSize
+		block.DataSet[i] = pair.ConvertBytesToPair(blockBuffer[blockOffset:])
+		blockOffset += pair.PairSize
 	}
 	// Read children block indexes
 	block.ChildrenBlockIds = make([]uint64, block.currentChildrenSize)
@@ -116,8 +118,8 @@ func (bs *BlockService) GetBufferFromBlock(block *DiskBlock) []byte {
 
 	//Write actual pairs now
 	for i := 0; i < int(block.CurrentLeafSize); i++ {
-		copy(blockBuffer[blockOffset:], ConvertPairsToBytes(block.DataSet[i]))
-		blockOffset += pairSize
+		copy(blockBuffer[blockOffset:], pair.ConvertPairsToBytes(block.DataSet[i]))
+		blockOffset += pair.PairSize
 	}
 	// Read children block indexes
 	for i := 0; i < int(block.currentChildrenSize); i++ {
@@ -163,7 +165,7 @@ func (bs *BlockService) WriteBlockToDisk(block *DiskBlock) error {
 
 func (bs *BlockService) ConvertDiskNodeToBlock(node *DiskNode) *DiskBlock {
 	block := &DiskBlock{Id: node.BlockID}
-	tempElements := make([]*Pairs, len(node.GetElements()))
+	tempElements := make([]*pair.Pairs, len(node.GetElements()))
 	for index, element := range node.GetElements() {
 		tempElements[index] = element
 	}
@@ -176,7 +178,7 @@ func (bs *BlockService) ConvertDiskNodeToBlock(node *DiskNode) *DiskBlock {
 	return block
 }
 
-func (bs *BlockService) getNodeAtBlockID(blockID uint64) (*DiskNode, error) {
+func (bs *BlockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
 	block, err := bs.getBlockFromDiskByBlockNumber(int64(blockID))
 	if err != nil {
 		return nil, err
@@ -188,7 +190,7 @@ func (bs *BlockService) ConvertBlockToDiskNode(block *DiskBlock) *DiskNode {
 	node := &DiskNode{
 		BlockID:      block.Id,
 		BlockService: bs,
-		Keys:         make([]*Pairs, block.CurrentLeafSize),
+		Keys:         make([]*pair.Pairs, block.CurrentLeafSize),
 	}
 	for index := range node.Keys {
 		node.Keys[index] = block.DataSet[index]
@@ -201,7 +203,7 @@ func (bs *BlockService) ConvertBlockToDiskNode(block *DiskBlock) *DiskNode {
 }
 
 // NewBlockFromNode - Save a new node to disk block
-func (bs *BlockService) saveNewNodeToDisk(n *DiskNode) error {
+func (bs *BlockService) SaveNewNodeToDisk(n *DiskNode) error {
 	// Get block id to be assigned to this block
 	latestBlockID, err := bs.GetLatestBlockID()
 	if err != nil {
@@ -212,14 +214,14 @@ func (bs *BlockService) saveNewNodeToDisk(n *DiskNode) error {
 	return bs.WriteBlockToDisk(block)
 }
 
-func (bs *BlockService) updateNodeToDisk(n *DiskNode) error {
+func (bs *BlockService) UpdateNodeToDisk(n *DiskNode) error {
 	block := bs.ConvertDiskNodeToBlock(n)
 	return bs.WriteBlockToDisk(block)
 }
 
-func (bs *BlockService) updateRootNode(n *DiskNode) error {
+func (bs *BlockService) UpdateRootNode(n *DiskNode) error {
 	n.BlockID = 0
-	return bs.updateNodeToDisk(n)
+	return bs.UpdateNodeToDisk(n)
 }
 
 func NewBlockService(file *os.File) *BlockService {

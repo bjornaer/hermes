@@ -1,17 +1,16 @@
-package disk
+package diskblock
 
 import (
 	"fmt"
+	"log"
 	"time"
+
+	"github.com/bjornaer/hermes/internal/disk/pair"
+	"github.com/bjornaer/hermes/internal/disk/types"
 )
 
-// node - Interface for node
-type node interface {
-	InsertPair(value *Pairs, bt *Btree) error
-	GetValue(key string) (string, time.Time, error)
-	PrintTree(level int)
-	Size() int
-}
+type Pairs = pair.Pairs
+type node = types.Node
 
 // DiskBlock -- Make sure that it is accomodated in blockSize = 4096
 type DiskBlock struct {
@@ -155,7 +154,7 @@ func (n *DiskNode) GetElementAtIndex(index int) *Pairs {
 }
 
 func (n *DiskNode) GetChildAtIndex(index int) (*DiskNode, error) {
-	return n.BlockService.getNodeAtBlockID(n.ChildrenBlockIDs[index])
+	return n.BlockService.GetNodeAtBlockID(n.ChildrenBlockIDs[index])
 }
 
 func (n *DiskNode) shiftRemainingChildrenToRight(index int) {
@@ -298,7 +297,7 @@ func (n *DiskNode) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(ele
 func NewLeafNode(elements []*Pairs, bs *BlockService) (*DiskNode, error) {
 	node := &DiskNode{Keys: elements, BlockService: bs}
 	//persist the node to disk
-	err := bs.saveNewNodeToDisk(node)
+	err := bs.SaveNewNodeToDisk(node)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +308,7 @@ func NewLeafNode(elements []*Pairs, bs *BlockService) (*DiskNode, error) {
 func NewNodeWithChildren(elements []*Pairs, childrenBlockIDs []uint64, bs *BlockService) (*DiskNode, error) {
 	node := &DiskNode{Keys: elements, ChildrenBlockIDs: childrenBlockIDs, BlockService: bs}
 	//persist this node to disk
-	err := bs.saveNewNodeToDisk(node)
+	err := bs.SaveNewNodeToDisk(node)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +322,7 @@ func newRootNodeWithSingleElementAndTwoChildren(element *Pairs, leftChildBlockID
 	childrenBlockIDs := []uint64{leftChildBlockID, rightChildBlockID}
 	node := &DiskNode{Keys: elements, ChildrenBlockIDs: childrenBlockIDs, BlockService: bs}
 	//persist this node to disk
-	err := bs.updateRootNode(node)
+	err := bs.UpdateRootNode(node)
 	if err != nil {
 		return nil, err
 	}
@@ -349,12 +348,12 @@ func (n *DiskNode) getChildNodeForElement(key string) (*DiskNode, error) {
 	return n.getLastChildNode()
 }
 
-func (n *DiskNode) insert(value *Pairs, bt *Btree) (*Pairs, *DiskNode, *DiskNode, error) {
+func (n *DiskNode) insert(value *Pairs, bt types.Tree) (*Pairs, *DiskNode, *DiskNode, error) {
 	if n.IsLeaf() {
 		n.AddElement(value)
 		if !n.HasOverFlown() {
 			// So lets store this updated node on disk
-			err := n.BlockService.updateNodeToDisk(n)
+			err := n.BlockService.UpdateNodeToDisk(n)
 			if err != nil {
 				return nil, nil, nil, err
 			}
@@ -371,7 +370,7 @@ func (n *DiskNode) insert(value *Pairs, bt *Btree) (*Pairs, *DiskNode, *DiskNode
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			bt.setRootNode(newRootNode)
+			bt.SetRootNode(newRootNode)
 			return nil, nil, nil, nil
 
 		}
@@ -399,7 +398,7 @@ func (n *DiskNode) insert(value *Pairs, bt *Btree) (*Pairs, *DiskNode, *DiskNode
 	if !n.HasOverFlown() {
 		// this means that element has been easily inserted into current parent Node
 		// without overflowing
-		err := n.BlockService.updateNodeToDisk(n)
+		err := n.BlockService.UpdateNodeToDisk(n)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -432,7 +431,7 @@ func (n *DiskNode) insert(value *Pairs, bt *Btree) (*Pairs, *DiskNode, *DiskNode
 
 	//@Todo: Update the metadata somewhere so that we can read this new root node
 	//next time
-	bt.setRootNode(newRootNode)
+	bt.SetRootNode(newRootNode)
 	return nil, nil, nil, nil
 }
 
@@ -470,7 +469,7 @@ func (n *DiskNode) search(key string) (string, time.Time, error) {
 }
 
 // Insert - Insert value into Node
-func (n *DiskNode) InsertPair(value *Pairs, bt *Btree) error {
+func (n *DiskNode) InsertPair(value *Pairs, bt types.Tree) error {
 	_, _, _, err := n.insert(value, bt)
 	if err != nil {
 		return err
@@ -480,4 +479,9 @@ func (n *DiskNode) InsertPair(value *Pairs, bt *Btree) error {
 
 func (n *DiskNode) GetValue(key string) (string, time.Time, error) {
 	return n.search(key)
+}
+
+func (n *DiskNode) GetChildOrSibling() (node, error) {
+	log.Println("IMPLEMENT ME!")
+	return nil, nil
 }

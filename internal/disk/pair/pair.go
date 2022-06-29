@@ -1,4 +1,4 @@
-package disk
+package pair
 
 import (
 	"encoding/binary"
@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// 2+2+30+93+8+2 = 137
-const pairSize = 137
+// 2+2+30+93+16+2 = 145
+const PairSize = 150
 const maxKeyLength = 30
 const maxValueLength = 93
 
@@ -16,7 +16,7 @@ type Pairs struct {
 	ValueLen  uint16    // 2
 	Key       string    // 30
 	Value     string    // 93 // serialize this on the client side, to enable more complex data
-	Timestamp time.Time // 8
+	Timestamp time.Time // 16
 	TimeLen   uint16    // 2
 }
 
@@ -32,7 +32,7 @@ func (p *Pairs) SetValue(value string) {
 
 func (p *Pairs) SetTime(t time.Time) {
 	p.Timestamp = t
-	p.TimeLen = 8
+	p.TimeLen = 16
 }
 
 func (p *Pairs) Validate() error {
@@ -62,7 +62,7 @@ func NewPairWithTime(key string, value string, t time.Time) *Pairs {
 }
 
 func ConvertPairsToBytes(pair *Pairs) []byte {
-	pairByte := make([]byte, pairSize)
+	pairByte := make([]byte, PairSize)
 	var pairOffset uint16
 	pairOffset = 0
 	copy(pairByte[pairOffset:], uint16ToBytes(pair.KeyLen))
@@ -99,6 +99,7 @@ func ConvertBytesToPair(pairByte []byte) *Pairs {
 	pairOffset += pair.KeyLen
 	pair.Value = string(pairByte[pairOffset : pairOffset+pair.ValueLen])
 	pairOffset += pair.ValueLen
+	// log.Fatal(pairByte[pairOffset : pairOffset+pair.TimeLen])
 	pair.Timestamp = time.Unix(bytesToEpoch(pairByte[pairOffset:pairOffset+pair.TimeLen]), 0)
 	return pair
 }
@@ -115,8 +116,8 @@ func uint16ToBytes(value uint16) []byte {
 }
 
 func epochToBytes(t int64) []byte {
-	out := make([]byte, 8)
-	binary.LittleEndian.PutUint32(out, uint32(t))
+	out := make([]byte, 16)
+	binary.LittleEndian.PutUint64(out, uint64(t))
 	return out
 }
 
