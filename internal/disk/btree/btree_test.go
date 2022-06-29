@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/bjornaer/hermes/internal/disk/btree"
 	"github.com/bjornaer/hermes/internal/disk/pair"
@@ -29,6 +30,7 @@ func (s *UnitTestSuite) SetupTest() {
 		s.T().Error(err)
 	}
 	s.tree = tree
+	s.totalElements = 250
 
 }
 
@@ -84,6 +86,25 @@ func BtreeGetInexistent(s *UnitTestSuite) {
 	}
 }
 
+func BtreeIterateF(s *UnitTestSuite) {
+	counter := 0
+	err := s.tree.Iterate(func(k string, v string, t time.Time) error {
+		counter += 1
+		assert.NotZero(s.T(), k)
+		assert.NotZero(s.T(), v)
+		assert.NotZero(s.T(), t)
+		return nil
+	})
+	if err != nil {
+		s.T().Error(err)
+	}
+	expected, err := s.tree.Count()
+	if err != nil {
+		s.T().Error(err)
+	}
+	assert.Equal(s.T(), expected, counter)
+}
+
 func (s *UnitTestSuite) Test_TableTest() {
 
 	type testCase struct {
@@ -103,6 +124,10 @@ func (s *UnitTestSuite) Test_TableTest() {
 		{
 			name:   "Get Non Existent Value",
 			treeFn: BtreeInsert,
+		},
+		{
+			name:   "Iterate Over Whole Tree",
+			treeFn: BtreeIterateF,
 		},
 	}
 

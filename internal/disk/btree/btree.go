@@ -24,8 +24,22 @@ type Btree[T any] struct {
 	err  error
 }
 
+// Size returns number of Nodes | well, should, this one is wrong
 func (bt *Btree[T]) Size() int {
 	return bt.root.Size()
+}
+
+// Count returns number of pairs stored
+func (bt *Btree[T]) Count() (int, error) {
+	size := 0
+	err := bt.Iterate(func(k string, v T, t time.Time) error {
+		size += 1
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return size, nil
 }
 
 func (bt *Btree[T]) IsRootNode(n node) bool {
