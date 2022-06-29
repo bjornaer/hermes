@@ -177,7 +177,7 @@ func (n *DiskNode) getLastChildNode() (*DiskNode, error) {
 	return n.GetChildAtIndex(len(n.ChildrenBlockIDs) - 1)
 }
 
-func (n *DiskNode) getChildNodes() ([]*DiskNode, error) {
+func (n *DiskNode) GetChildNodes() ([]*DiskNode, error) {
 	childNodes := make([]*DiskNode, len(n.ChildrenBlockIDs))
 	for index := range n.ChildrenBlockIDs {
 		childNode, err := n.GetChildAtIndex(index)

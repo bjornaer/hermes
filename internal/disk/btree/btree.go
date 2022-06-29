@@ -19,22 +19,21 @@ func CreateOrOpenFile(path string) (*os.File, error) {
 }
 
 // Btree - Our in memory Btree struct
-type Btree struct {
+type Btree[T any] struct {
 	root node
-	node node
 	err  error
 }
 
-func (bt *Btree) Size() int {
+func (bt *Btree[T]) Size() int {
 	return bt.root.Size()
 }
 
-func (bt *Btree) IsRootNode(n node) bool {
+func (bt *Btree[T]) IsRootNode(n node) bool {
 	return bt.root == n
 }
 
 // NewBtree - Create a new btree
-func InitializeBtree(optionalPath ...string) (*Btree, error) {
+func InitializeBtree[T any](optionalPath ...string) (*Btree[T], error) {
 	path := "./db/hermes/olympus.db"
 	if len(optionalPath) != 0 {
 		path = optionalPath[0]
@@ -50,15 +49,15 @@ func InitializeBtree(optionalPath ...string) (*Btree, error) {
 	if root == nil || err != nil {
 		panic(err)
 	}
-	return &Btree{root: root, node: root, err: nil}, nil
+	return &Btree[T]{root: root, err: nil}, nil
 }
 
 // Insert - Insert element in tree
-func (bt *Btree) Insert(value *pair.Pairs) error {
+func (bt *Btree[T]) Insert(value *pair.Pairs) error {
 	return bt.root.InsertPair(value, bt)
 }
 
-func (bt *Btree) Get(key string) (string, time.Time, bool, error) {
+func (bt *Btree[T]) Get(key string) (string, time.Time, bool, error) {
 	value, addedAt, err := bt.root.GetValue(key)
 	if err != nil {
 		return "", time.Time{}, false, err
@@ -72,29 +71,32 @@ func (bt *Btree) Get(key string) (string, time.Time, bool, error) {
 	return value, addedAt, true, nil
 }
 
-func (bt *Btree) SetRootNode(n node) {
+func (bt *Btree[T]) SetRootNode(n node) {
 	bt.root = n
 }
 
-func (bt *Btree) Next() bool {
-	next, err := bt.node.GetChildOrSibling()
-	if next == nil {
-		bt.node = bt.root
-		return false
-	}
-	if err != nil {
-		bt.err = err
-		bt.node = bt.root
-		return false
-	}
-	bt.node = next
-	return true
+func (bt *Btree[T]) Iterate(f func(key string, val T, addedAt time.Time) error) error {
+	return depthFirstPostOrder(bt.root, f)
 }
 
-func (bt *Btree) Error() error {
+func (bt *Btree[T]) Error() error {
 	return bt.err
 }
 
-func (bt *Btree) IterGet() []*pair.Pairs {
-	return bt.node.GetElements()
+func depthFirstPostOrder[T any](node types.Node, f func(key string, val T, addedAt time.Time) error) error {
+	diskNode := node.(*diskblock.DiskNode)
+	children, err := diskNode.GetChildNodes()
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		depthFirstPostOrder(child, f)
+	}
+	for _, elm := range diskNode.GetElements() {
+		err := f(elm.Key, any(elm.Value).(T), elm.Timestamp)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -15,7 +15,7 @@ type UnitTestSuite struct {
 	suite.Suite
 	totalElements int
 	path          string
-	tree          *btree.Btree
+	tree          *btree.Btree[string]
 }
 
 func (s *UnitTestSuite) SetupTest() {
@@ -24,7 +24,7 @@ func (s *UnitTestSuite) SetupTest() {
 		os.Mkdir("./db", os.ModePerm)
 	}
 	s.path = "./db/"
-	tree, err := btree.InitializeBtree(path)
+	tree, err := btree.InitializeBtree[string](path)
 	if err != nil {
 		s.T().Error(err)
 	}

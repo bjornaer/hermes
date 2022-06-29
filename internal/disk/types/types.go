@@ -13,7 +13,6 @@ type Node interface {
 	PrintTree(level int)
 	Size() int
 	GetElements() []*pair.Pairs
-	GetChildOrSibling() (Node, error)
 }
 
 // Tree - Our in memory tree interface
@@ -23,7 +22,5 @@ type Tree interface {
 	SetRootNode(n Node)
 	Insert(value *pair.Pairs) error
 	Get(key string) (string, time.Time, bool, error)
-	Next() bool
 	Error() error
-	IterGet() []*pair.Pairs
 }

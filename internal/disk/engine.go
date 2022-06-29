@@ -10,7 +10,7 @@ import (
 
 //DB - Handle exported by the package
 type DiskStorage[T any] struct {
-	storage *btree.Btree
+	storage *btree.Btree[T]
 }
 
 //Get - Get the stored value from the database for the respective key // FIXME this any casting bs is to avoid handling generics inside BTREE code
@@ -62,13 +62,9 @@ func (ds *DiskStorage[T]) AddedAt(key string) (time.Time, bool) {
 // for each element key/value/timestamp association
 func (ds *DiskStorage[T]) Each(f func(key string, val T, addedAt time.Time) error) error {
 	s := ds.storage
-	for s.Next() {
-		for _, elm := range s.IterGet() {
-			err := f(elm.Key, any(elm.Value).(T), elm.Timestamp)
-			if err != nil {
-				return err
-			}
-		}
+	err := s.Iterate(f)
+	if err != nil {
+		return err
 	}
 	if err := s.Error(); err != nil {
 		return err
@@ -82,7 +78,7 @@ func (ds *DiskStorage[T]) Size() int {
 
 // NewDiskStorage returns an empty memory DB storage implementation of the CrdtEngine interface
 func NewDiskStorage[T any](filePath string) (*DiskStorage[T], error) {
-	storage, err := btree.InitializeBtree(filePath)
+	storage, err := btree.InitializeBtree[T](filePath)
 	if err != nil {
 		return nil, err
 	}
