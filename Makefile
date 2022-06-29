@@ -49,7 +49,7 @@ windows:
 
 test:
 	cd ${BUILD_DIR}; \
-	go test  -v -race ./... > ${TEST_REPORT} 2>&1 ; \
+	go test  -v -race ./...
 
 vet:
 	-cd ${BUILD_DIR}; \

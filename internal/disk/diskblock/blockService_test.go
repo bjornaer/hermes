@@ -6,10 +6,19 @@ import (
 
 	"github.com/bjornaer/hermes/internal/disk/diskblock"
 	"github.com/bjornaer/hermes/internal/disk/pair"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func initBlockService() *diskblock.BlockService {
-	path := "./db/test.db"
+type UnitTestSuite struct {
+	suite.Suite
+	totalElements int
+	path          string
+	blockservice  *diskblock.BlockService
+}
+
+func (s *UnitTestSuite) SetupTest() {
+	path := "./db/block_test.db"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Mkdir("./db", os.ModePerm)
 	}
@@ -24,83 +33,76 @@ func initBlockService() *diskblock.BlockService {
 	if err != nil {
 		panic(err)
 	}
-	return diskblock.NewBlockService(file)
+
+	s.path = "./db"
+	s.blockservice = diskblock.NewBlockService(file)
+
 }
 
-func TestShouldGetNegativeIfBlockNotPresent(t *testing.T) {
-	blockService := initBlockService()
-	latestBlockID, _ := blockService.GetLatestBlockID()
-	if latestBlockID != -1 {
-		t.Error("Should get negative block id")
+func (s *UnitTestSuite) BeforeTest(suiteName, testName string) {
+
+}
+
+func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
+	if _, err := os.Stat(s.path); err == nil {
+		// path/to/whatever exists
+		err := os.RemoveAll(s.path)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
-func TestShouldSuccessfullyInitializeNewBlock(t *testing.T) {
-	blockService := initBlockService()
-	block, err := blockService.GetRootBlock()
+func ShouldGetNegativeIfBlockNotPresent(s *UnitTestSuite) {
+	latestBlockID, _ := s.blockservice.GetLatestBlockID()
+	assert.Equal(s.T(), int64(-1), latestBlockID)
+}
+
+func ShouldSuccessfullyInitializeNewBlock(s *UnitTestSuite) {
+	block, err := s.blockservice.GetRootBlock()
 	if err != nil {
-		t.Error(err)
+		s.T().Error(err)
 	}
-	if block.Id != 0 {
-		t.Error("Root Block id should be zero")
-	}
-
-	if block.CurrentLeafSize != 0 {
-		t.Error("Block leaf size should be zero")
-	}
+	assert.Zero(s.T(), block.Id, "Root Block id should be zero")
+	assert.Zero(s.T(), block.CurrentLeafSize, "Block leaf size should be zero")
 }
 
-func TestShouldSaveNewBlockOnDisk(t *testing.T) {
-	blockService := initBlockService()
-	block, err := blockService.GetRootBlock()
+func ShouldSaveNewBlockOnDisk(s *UnitTestSuite) {
+	block, err := s.blockservice.GetRootBlock()
 	if err != nil {
-		t.Error(err)
+		s.T().Error(err)
 	}
-	if block.Id != 0 {
-		t.Error("Root Block id should be zero")
-	}
+	assert.Zero(s.T(), block.Id, "Root Block id should be zero")
+	assert.Zero(s.T(), block.CurrentLeafSize, "Block leaf size should be zero")
 
-	if block.CurrentLeafSize != 0 {
-		t.Error("Block leaf size should be zero")
-	}
 	elements := make([]*pair.Pairs, 3)
 	elements[0] = pair.NewPair("hola", "amigos")
 	elements[1] = pair.NewPair("foo", "bar")
 	elements[2] = pair.NewPair("gooz", "bumps")
 	block.SetData(elements)
-	err = blockService.WriteBlockToDisk(block)
+	err = s.blockservice.WriteBlockToDisk(block)
 	if err != nil {
-		t.Error(err)
+		s.T().Error(err)
 	}
 
-	block, err = blockService.GetRootBlock()
+	block, err = s.blockservice.GetRootBlock()
 	if err != nil {
-		t.Error(err)
+		s.T().Error(err)
 	}
-
-	if len(block.DataSet) == 0 {
-		t.Error("Length of data field should not be zero")
-	}
+	assert.NotZero(s.T(), block.DataSet, "Length of data field should not be zero")
 }
 
-func TestShouldConvertPairToAndFromBytes(t *testing.T) {
+func ShouldConvertPairToAndFromBytes(s *UnitTestSuite) {
 	p := pair.NewPair("Hola  ", "Amigos")
-	// p.SetKey("Hola  ")
-	// p.SetValue("Amigos")
 	pairBytes := pair.ConvertPairsToBytes(p)
 	convertedPair := pair.ConvertBytesToPair(pairBytes)
-
-	if p.KeyLen != convertedPair.KeyLen || p.ValueLen != convertedPair.ValueLen {
-		t.Error("Lengths do not match")
-	}
-
-	if p.Key != convertedPair.Key || p.Value != convertedPair.Value {
-		t.Error("Values do not match")
-	}
+	assert.Equal(s.T(), p.KeyLen, convertedPair.KeyLen, "Key length should match")
+	assert.Equal(s.T(), p.ValueLen, convertedPair.ValueLen, "Value length should match")
+	assert.Equal(s.T(), p.Key, convertedPair.Key, "Key should match")
+	assert.Equal(s.T(), p.Value, convertedPair.Value, "Value should match")
 }
 
-func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
-	blockService := initBlockService()
+func ShouldConvertBlockToAndFromBytes(s *UnitTestSuite) {
 	block := &diskblock.DiskBlock{}
 	block.SetChildren([]uint64{2, 3, 4, 6})
 
@@ -109,28 +111,17 @@ func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 	elements[1] = pair.NewPair("foo", "bar")
 	elements[2] = pair.NewPair("gooz", "bumps")
 	block.SetData(elements)
-	blockBuffer := blockService.GetBufferFromBlock(block)
-	convertedBlock := blockService.GetBlockFromBuffer(blockBuffer)
+	blockBuffer := s.blockservice.GetBufferFromBlock(block)
+	convertedBlock := s.blockservice.GetBlockFromBuffer(blockBuffer)
 
-	if convertedBlock.ChildrenBlockIds[2] != 4 {
-		t.Error("Should contain 4 at 2nd index")
-	}
-
-	if len(convertedBlock.DataSet) != len(block.DataSet) {
-		t.Error("Length of blocks should be same")
-	}
-
-	if convertedBlock.DataSet[1].Key != block.DataSet[1].Key {
-		t.Error("Keys dont match")
-	}
-
-	if convertedBlock.DataSet[2].Value != block.DataSet[2].Value {
-		t.Error("Values dont match")
-	}
+	assert.Equal(s.T(), 4, int(convertedBlock.ChildrenBlockIds[2]))
+	assert.Equal(s.T(), len(convertedBlock.DataSet), len(block.DataSet), "Length of blocks should be same")
+	assert.Equal(s.T(), convertedBlock.DataSet[1].Key, block.DataSet[1].Key, "Keys should match")
+	assert.Equal(s.T(), convertedBlock.DataSet[2].Value, block.DataSet[2].Value, "Values should match")
 }
 
-func TestShouldConvertToAndFromDiskNode(t *testing.T) {
-	bs := initBlockService()
+func ShouldConvertToAndFromDiskNode(s *UnitTestSuite) {
+	bs := s.blockservice
 	node := &diskblock.DiskNode{}
 	node.BlockID = 55
 	elements := make([]*pair.Pairs, 3)
@@ -138,24 +129,57 @@ func TestShouldConvertToAndFromDiskNode(t *testing.T) {
 	node.Keys = elements
 	node.ChildrenBlockIDs = []uint64{1000, 10001}
 	block := bs.ConvertDiskNodeToBlock(node)
-
-	if block.Id != 55 {
-		t.Error("Should have same block id as node block id")
-	}
-	if block.ChildrenBlockIds[1] != 10001 {
-		t.Error("Block ids should match")
-	}
+	assert.Equal(s.T(), 55, int(block.Id), "Should have same block id as node block id")
+	assert.Equal(s.T(), 10001, int(block.ChildrenBlockIds[1]), "Block ids should match")
 
 	nodeFromBlock := bs.ConvertBlockToDiskNode(block)
 
-	if nodeFromBlock.BlockID != node.BlockID {
-		t.Error("Block ids should match")
+	assert.Equal(s.T(), nodeFromBlock.BlockID, node.BlockID)
+
+	assert.Equal(s.T(), 1000, int(nodeFromBlock.ChildrenBlockIDs[0]))
+	assert.Equal(s.T(), "hola", nodeFromBlock.Keys[0].Key)
+}
+
+func (s *UnitTestSuite) Test_TableTest() {
+	type testCase struct {
+		name         string
+		disckblockFn func(s *UnitTestSuite)
+	}
+	testCases := []testCase{
+		{
+			name:         "Get negative ID if no block present",
+			disckblockFn: ShouldGetNegativeIfBlockNotPresent,
+		},
+		{
+			name:         "Initialize New Block",
+			disckblockFn: ShouldSuccessfullyInitializeNewBlock,
+		},
+		{
+			name:         "Save Block on Disk",
+			disckblockFn: ShouldSaveNewBlockOnDisk,
+		},
+		{
+			name:         "Convert Pairs object To and From Bytes",
+			disckblockFn: ShouldConvertPairToAndFromBytes,
+		},
+		{
+			name:         "Convert Disk Block To and From Bytes",
+			disckblockFn: ShouldConvertBlockToAndFromBytes,
+		},
+		{
+			name:         "Convert Disk Node To and From Bytes",
+			disckblockFn: ShouldConvertToAndFromDiskNode,
+		},
 	}
 
-	if nodeFromBlock.ChildrenBlockIDs[0] != 1000 {
-		t.Error("Child Block ids should match")
+	for _, testCase := range testCases {
+
+		s.Run(testCase.name, func() {
+			testCase.disckblockFn(s)
+		})
 	}
-	if nodeFromBlock.Keys[0].Key != "hola" {
-		t.Error("Data elements should match")
-	}
+}
+
+func TestUnitTestSuite(t *testing.T) {
+	suite.Run(t, new(UnitTestSuite))
 }
