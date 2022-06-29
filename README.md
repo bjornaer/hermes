@@ -1,6 +1,6 @@
 # hermes
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/bjornaer/hermes)](https://goreportcard.com/report/github.com/bjornaer/hermes) ![tests](https://github.com/bjornaer/hermes/actions/workflows/push.yaml/badge.svg) ![GitHub last commit](https://img.shields.io/github/last-commit/bjornaer/hermes?style=plastic) ![GitHub repo size](https://img.shields.io/github/repo-size/bjornaer/hermes?style=plastic) ![Lines of code](https://img.shields.io/tokei/lines/github/bjornaer/hermes?style=plastic) ![GitHub](https://img.shields.io/github/license/bjornaer/hermes?style=flat-square) [![HitCount](https://hits.dwyl.com/bjornaer/crdt.svg?style=flat-square)](http://hits.dwyl.com/bjornaer/hermes)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bjornaer/hermes)](https://goreportcard.com/report/github.com/bjornaer/hermes) ![tests](https://github.com/bjornaer/hermes/actions/workflows/push.yaml/badge.svg) ![GitHub last commit](https://img.shields.io/github/last-commit/bjornaer/hermes?style=plastic) ![GitHub repo size](https://img.shields.io/github/repo-size/bjornaer/hermes?style=plastic) ![Lines of code](https://img.shields.io/tokei/lines/github/bjornaer/hermes?style=plastic) ![GitHub](https://img.shields.io/github/license/bjornaer/hermes?style=flat-square) [![HitCount](https://hits.dwyl.com/bjornaer/hermes.svg?style=flat-square)](http://hits.dwyl.com/bjornaer/hermes)
 
 **Hermes** is a distributed key-value store which guarantees data consistency through CRDT's
 
@@ -31,16 +31,9 @@ In computer science, a B-tree is a self-balancing tree data structure that maint
 
 ### Package
 
-This package implements a `CRDT` interface that enables use of the `LWW-Graph` structure using a `LWW-Element-Set` to represent its set of vertices while for its edges it uses a `mapping of a vertex to a LWW-Element-Set` representing all edges of said vertex.
+This package implements a `CRDT` interface that runs on top of a `BTree` structure which by itself abstracts the filesystem blocks to store data
 
-The package also exposes the option to simply use a `LWW-Element-Set`.
-
-As stated in the previous section the `LWW-Element-Set` contains both `Additions` and `Removals` sets, 
-to where we monotonically add graph elements marked to be added or removed. 
-To make sure we keep things monotonically, the LWW-Element-Set is built using a helper structure we call `Time Map`.
-The `Time Map` is an abstraction of a Go Map in which we only allow the operation of adding elements,
-and map those elements to a timestamp in the moment of the addition.
-Thus, only allowing items to be added to both the `Adittions` and `Removals` set.
+This codebase is set to implement a DB server that allows for multiple nodes of the same DB to be run distributed and uses CRDT to derive consistency.
 
 ---
 ### Examples
