@@ -45,8 +45,8 @@ While I haven't added examples to this DB directly you can find [examples of CRD
 
 To run tests
 
-```go
-go test ./...
+```bash
+make test
 ```
 
 ---
