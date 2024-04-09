@@ -32,7 +32,7 @@ func (bt *Btree[T]) Size() int {
 // Count returns number of pairs stored
 func (bt *Btree[T]) Count() (int, error) {
 	size := 0
-	err := bt.Iterate(func(k string, v T, t time.Time) error {
+	err := bt.Iterate(func(k string, v string, t time.Time) error {
 		size += 1
 		return nil
 	})
@@ -89,7 +89,7 @@ func (bt *Btree[T]) SetRootNode(n node) {
 	bt.root = n
 }
 
-func (bt *Btree[T]) Iterate(f func(key string, val T, addedAt time.Time) error) error {
+func (bt *Btree[T]) Iterate(f func(key string, val string, addedAt time.Time) error) error {
 	return depthFirstPostOrder(bt.root, f)
 }
 

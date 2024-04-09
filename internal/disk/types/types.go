@@ -24,3 +24,18 @@ type Tree interface {
 	Get(key string) (string, time.Time, bool, error)
 	Error() error
 }
+
+type DataPoint[T comparable] struct {
+	ID        T
+	Embedding []float64
+}
+
+type SearchResult[T comparable] struct {
+	ID       string
+	Distance float64
+	Vector   []float64
+}
+
+func NewDataPoint[T comparable](id T, embedding []float64) *DataPoint[T] {
+	return &DataPoint[T]{id, embedding}
+}
