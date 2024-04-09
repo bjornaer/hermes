@@ -6,14 +6,16 @@ import (
 
 	"github.com/bjornaer/hermes/internal/disk/btree"
 	"github.com/bjornaer/hermes/internal/disk/pair"
+	"github.com/bjornaer/hermes/internal/disk/vector"
 )
 
-//DB - Handle exported by the package
-type DiskStorage[T any] struct {
-	storage *btree.Btree[T]
+// DiskStorage is the representation of our storage logical unit, built on top of our VectorIndex and B Tree
+type DiskStorage[T comparable] struct {
+	storage     *btree.Btree[T]
+	vectorIndex *vector.VectorIndex[T]
 }
 
-//Get - Get the stored value from the database for the respective key // FIXME this any casting bs is to avoid handling generics inside BTREE code
+// Get - Get the stored value from the database for the respective key // FIXME this any casting bs is to avoid handling generics inside BTREE code
 func (ds *DiskStorage[T]) Get(key string) (T, bool) {
 	v, _, found, err := ds.storage.Get(key)
 	if err != nil {
@@ -77,10 +79,22 @@ func (ds *DiskStorage[T]) Size() int {
 }
 
 // NewDiskStorage returns an empty memory DB storage implementation of the CrdtEngine interface
-func NewDiskStorage[T any](filePath string) (*DiskStorage[T], error) {
-	storage, err := btree.InitializeBtree[T](filePath)
+func NewDiskStorage[T comparable](filePath ...string) (*DiskStorage[T], error) {
+	var storage *btree.Btree[T]
+	var err error
+	if len(filePath) != 0 {
+		storage, err = btree.InitializeBtree[T](filePath[0])
+	} else {
+		storage, err = btree.InitializeBtree[T]()
+	}
 	if err != nil {
 		return nil, err
 	}
-	return &DiskStorage[T]{storage}, nil
+
+	vi, err := vector.NewVectorIndex[T](storage, 1, 3, vector.NewCosineDistanceMeasure())
+	if err != nil {
+		return nil, err
+	}
+
+	return &DiskStorage[T]{storage: storage, vectorIndex: vi}, nil
 }

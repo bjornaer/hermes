@@ -11,6 +11,7 @@ const PairSize = 150
 const maxKeyLength = 30
 const maxValueLength = 93
 
+// Pairs: Key is the vector index and Value is the actual vector
 type Pairs struct {
 	KeyLen    uint16    // 2
 	ValueLen  uint16    // 2
@@ -125,3 +126,9 @@ func bytesToEpoch(b []byte) int64 {
 	i := int64(binary.LittleEndian.Uint64(b))
 	return i
 }
+
+// func float64ToByte(f float64) []byte {
+// 	var buf [8]byte
+// 	binary.LittleEndian.PutUint64(buf[:], math.Float64bits(f))
+// 	return buf[:]
+// }

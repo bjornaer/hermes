@@ -3,5 +3,5 @@ package main
 import "log"
 
 func main() {
-	log.Println("I'm Hermes, find the right information right away!")
+	log.Println("I'm Hermes, your fast vector DB")
 }

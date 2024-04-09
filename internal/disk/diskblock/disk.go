@@ -233,7 +233,7 @@ func (n *DiskNode) SplitLeafNode() (*Pairs, *DiskNode, *DiskNode, error) {
 	return middle, leftNode, rightNode, nil
 }
 
-//SplitNonLeafNode - Split non leaf node
+// SplitNonLeafNode - Split non leaf node
 func (n *DiskNode) SplitNonLeafNode() (*Pairs, *DiskNode, *DiskNode, error) {
 	/**
 		NON-LEAF NODE SPLITTING ALGORITHM WITH CHILDREN MANIPULATION
